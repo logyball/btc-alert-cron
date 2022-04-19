@@ -5,6 +5,7 @@
   become: yes
   vars:
     mongo_connection: "{{ mongo }}"
+    mongo_db: "{{ mongo_db }}"
     binary_path: "{{ bin }}"
 
   tasks:

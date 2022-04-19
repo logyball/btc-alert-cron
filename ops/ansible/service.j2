@@ -6,6 +6,7 @@ Type=simple
 Restart=always
 User=logan
 Environment=MONGO_CONNECTION={{ mongo_connection }}
+Environment=MONGO_DB={{ mongo_db }}
 Environment=DEPLOYED=true
 ExecStart=/usr/local/bin/btccron
 

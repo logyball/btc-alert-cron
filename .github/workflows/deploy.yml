@@ -58,6 +58,7 @@ jobs:
           options: |
             -i "${{ steps.ip-dev.outputs.ip-address }},"
             --extra-vars mongo=${{ secrets.MONGO_CONNECTION_STRING_DEV }}
+            --extra-vars mongo_db=btc-dev
             --extra-vars bin="../../${{ steps.build.outputs.bin }}"
             --verbose
 
@@ -70,6 +71,7 @@ jobs:
           options: |
             -i "${{ steps.ip-prod.outputs.ip-address }},"
             --extra-vars mongo=${{ secrets.MONGO_CONNECTION_STRING_PROD }}
+            --extra-vars mongo_db=btc
             --extra-vars bin="../../${{ steps.build.outputs.bin }}"
             --verbose
   
