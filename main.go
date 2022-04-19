@@ -39,11 +39,11 @@ type Alert struct {
 	ID     primitive.ObjectID `bson:"_id"`
 	Name   string             `bson:"name"`
 	Type   string             `bson:"type"`
-	Price  float32            `bson:"price"`
+	Price  float64            `bson:"price,truncate"`
 	Status string             `bson:"status"`
 }
 
-func getPrices() (float32, float32) {
+func getPrices() (float64, float64) {
 	log.Info("getting BTC prices from coinbase API")
 	var cBuyResp, cSellResp CoinbaseResponse
 
@@ -69,19 +69,19 @@ func getPrices() (float32, float32) {
 		log.Fatalln(err)
 	}
 
-	buyPrice, err := strconv.ParseFloat(cBuyResp.Data["amount"], 32)
+	buyPrice, err := strconv.ParseFloat(cBuyResp.Data["amount"], 64)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	sellPrice, err := strconv.ParseFloat(cSellResp.Data["amount"], 32)
+	sellPrice, err := strconv.ParseFloat(cSellResp.Data["amount"], 64)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	log.Infof("Current BTC buy price: %f, current BTC sell Price: %f", buyPrice, sellPrice)
 
-	return float32(buyPrice), float32(sellPrice)
+	return float64(buyPrice), float64(sellPrice)
 }
 
 func checkAlerts(ctx context.Context, alerts *mongo.Collection) []*Alert {
@@ -122,7 +122,7 @@ func fireAlert(ctx context.Context, alertsCollection *mongo.Collection, alert *A
 	}
 }
 
-func scanAlerts(ctx context.Context, alertsCollection *mongo.Collection, alertList []*Alert, buyPrice float32, sellPrice float32) {
+func scanAlerts(ctx context.Context, alertsCollection *mongo.Collection, alertList []*Alert, buyPrice float64, sellPrice float64) {
 	for _, alert := range alertList {
 		if alert.Type == "MAX" && (sellPrice > alert.Price) {
 			log.Infof("Triggered max alert %s at threshold %v for price %v\n", alert.Name, alert.Price, sellPrice)
@@ -183,8 +183,6 @@ func init() {
 	if dbName == "" {
 		log.Fatal("unable to read mongo DB name from environment")
 	}
-
-	fmt.Println(mongodbUri)
 
 }
 
