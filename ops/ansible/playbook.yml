@@ -1,0 +1,33 @@
+---
+- name: Install
+  hosts: all
+  remote_user: logan
+  become: yes
+  vars:
+    mongo_connection: "{{ mongo }}"
+    binary_path: "{{ bin }}"
+
+  tasks:
+    - name: install binary
+      ansible.builtin.copy:
+        src: "{{ binary_path }}"
+        dest: /usr/local/bin/btccron
+        owner: root
+        group: root
+        mode: '0777'
+
+        
+    - name: install service file
+      ansible.builtin.template:
+        src: ./service.j2
+        dest: /etc/systemd/system/btccron.service
+        owner: root
+        group: root
+        mode: '0744'
+
+    - name: start service
+      systemd:
+        name: btccron
+        state: started
+        enabled: yes
+        daemon_reload: yes

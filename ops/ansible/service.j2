@@ -1,0 +1,12 @@
+[Unit]
+Description=BTC Alert API
+
+[Service]
+Type=simple  
+Restart=always
+User=logan
+Environment=MONGO_CONNECTION={{ mongo_connection }}
+ExecStart=/usr/local/bin/btccron
+
+[Install]
+WantedBy=multi-user.target

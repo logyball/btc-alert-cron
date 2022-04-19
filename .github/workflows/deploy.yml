@@ -1,0 +1,81 @@
+name: Build and Deploy
+on:
+  workflow_dispatch:
+  push:
+    branches:
+       - main
+  pull_request:
+    branches:
+       - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+  
+  deploy:
+    needs: ['test']
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '1.17.0'
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: build go binary
+        id: build
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o btccron main.go
+          echo "::set-output name=bin::btccron"
+      
+      - name: get IP address - dev
+        if: github.event_name == 'pull_request'
+        id: ip-dev
+        run: echo "::set-output name=ip-address::$(aws ssm get-parameter --with-decryption --name "/dev/vm/ip" | jq -r .Parameter.Value)"
+        shell: bash
+
+      - name: get IP address - prod
+        if: github.event_name == 'push'
+        id: ip-prod
+        run: echo "::set-output name=ip-address::$(aws ssm get-parameter --with-decryption --name "/prod/vm/ip" | jq -r .Parameter.Value)"
+        shell: bash
+
+      - name: ansible - dev
+        if: github.event_name == 'pull_request'
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          playbook: ops/ansible/playbook.yml
+          key: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
+          options: |
+            -i "${{ steps.ip-dev.outputs.ip-address }},"
+            --extra-vars mongo=${{ secrets.MONGO_CONNECTION_STRING }}
+            --extra-vars bin="../../${{ steps.build.outputs.bin }}"
+            --verbose
+
+      - name: ansible - prod
+        if: github.event_name == 'push'
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          playbook: ops/ansible/playbook.yml
+          key: ${{ secrets.SSH_PRIVATE_KEY_PROD }}
+          options: |
+            -i "${{ steps.ip-prod.outputs.ip-address }},"
+            --extra-vars mongo=${{ secrets.MONGO_CONNECTION_STRING }}
+            --extra-vars bin="../../${{ steps.build.outputs.bin }}"
+            --verbose
+  
+  post-deploy:
+    needs: ['deploy']
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
