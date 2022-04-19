@@ -21,7 +21,6 @@ import (
 const (
 	coinbaseUrl      string = "https://api.coinbase.com/v2/prices/%s/%s" // currency pair, verb (buy|sell)
 	btcToUSD         string = "BTC-USD"
-	dbName           string = "btc"
 	collectionName   string = "alerts"
 	runEveryXSeconds int    = 20
 )
@@ -30,6 +29,7 @@ var buyUrl string = fmt.Sprintf(coinbaseUrl, btcToUSD, "buy")
 var sellUrl string = fmt.Sprintf(coinbaseUrl, btcToUSD, "sell")
 
 var mongodbUri string
+var dbName string
 
 type CoinbaseResponse struct {
 	Data map[string]string `json:"data"`
@@ -177,6 +177,11 @@ func init() {
 	mongodbUri = os.Getenv("MONGO_CONNECTION")
 	if mongodbUri == "" {
 		log.Fatal("unable to read mongo uri from environment")
+	}
+
+	dbName = os.Getenv("MONGO_DB")
+	if dbName == "" {
+		log.Fatal("unable to read mongo DB name from environment")
 	}
 
 	fmt.Println(mongodbUri)
