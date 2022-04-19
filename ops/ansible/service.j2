@@ -1,11 +1,12 @@
 [Unit]
-Description=BTC Alert API
+Description=BTC Cron Job
 
 [Service]
 Type=simple  
 Restart=always
 User=logan
 Environment=MONGO_CONNECTION={{ mongo_connection }}
+Environment=DEPLOYED=true
 ExecStart=/usr/local/bin/btccron
 
 [Install]

@@ -166,9 +166,12 @@ func Wrapper() {
 }
 
 func init() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("could not load dotenv")
+	_, ok := os.LookupEnv("DEPLOYED")
+	if !ok {
+		err := godotenv.Load()
+		if err != nil {
+			log.Fatal("could not load dotenv")
+		}
 	}
 
 	mongodbUri = os.Getenv("MONGO_CONNECTION")
