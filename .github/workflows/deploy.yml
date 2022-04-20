@@ -17,6 +17,7 @@ jobs:
   
   deploy:
     needs: ['test']
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -36,34 +37,13 @@ jobs:
         run: |
           GOOS=linux GOARCH=amd64 go build -o btccron main.go
           echo "::set-output name=bin::btccron"
-      
-      - name: get IP address - dev
-        if: github.event_name == 'pull_request'
-        id: ip-dev
-        run: echo "::set-output name=ip-address::$(aws ssm get-parameter --with-decryption --name "/dev/vm/ip" | jq -r .Parameter.Value)"
-        shell: bash
 
-      - name: get IP address - prod
-        if: github.event_name == 'push'
+      - name: get IP address
         id: ip-prod
         run: echo "::set-output name=ip-address::$(aws ssm get-parameter --with-decryption --name "/prod/vm/ip" | jq -r .Parameter.Value)"
         shell: bash
 
-      - name: ansible - dev
-        if: github.event_name == 'pull_request'
-        uses: dawidd6/action-ansible-playbook@v2
-        with:
-          playbook: ops/ansible/playbook.yml
-          key: ${{ secrets.SSH_PRIVATE_KEY_DEV }}
-          options: |
-            -i "${{ steps.ip-dev.outputs.ip-address }},"
-            --extra-vars mongo=${{ secrets.MONGO_CONNECTION_STRING_DEV }}
-            --extra-vars mongo_db=btc-dev
-            --extra-vars bin="../../${{ steps.build.outputs.bin }}"
-            --verbose
-
-      - name: ansible - prod
-        if: github.event_name == 'push'
+      - name: ansible
         uses: dawidd6/action-ansible-playbook@v2
         with:
           playbook: ops/ansible/playbook.yml
@@ -77,6 +57,7 @@ jobs:
   
   post-deploy:
     needs: ['deploy']
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: checkout
