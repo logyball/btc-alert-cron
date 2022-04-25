@@ -40,7 +40,7 @@ jobs:
 
       - name: get IP address
         id: ip-prod
-        run: echo "::set-output name=ip-address::$(aws ssm get-parameter --with-decryption --name "/prod/vm/ip" | jq -r .Parameter.Value)"
+        run: echo "::set-output name=ip-address::$(aws ssm get-parameter --with-decryption --name "/vm/ip" | jq -r .Parameter.Value)"
         shell: bash
 
       - name: ansible
